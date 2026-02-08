@@ -1,0 +1,59 @@
+# Project Name: Cool Mech Service - HVAC Management System
+**Version:** 1.0
+**Target Business:** HVAC (Heating, Ventilation, Air Conditioning) Service Provider
+**Goal:** Transition from manual book-keeping to a digital POS, Invoicing, and Accounting system to scale profitability.
+
+---
+
+## 1. Executive Summary
+"Cool Mech Service" requires a lightweight, browser-based management system to handle day-to-day HVAC operations. The system must create professional estimates and invoices, track customer details, and provide basic accounting (Profit/Loss) to move the business to the next level. The solution must be affordable (free to host/run locally) and user-friendly.
+
+---
+
+## 2. Business Requirements (BRD)
+*What the system needs to do for the business.*
+
+### 2.1. Core Modules
+1.  **Dashboard:** A snapshot view showing Total Revenue (Monthly), Pending Invoices, and Recent Activities.
+2.  **Customer Management (CRM):** Ability to add, view, and search for customers (Name, Phone, Address, Service History).
+3.  **Service & Parts Catalog:** A list of standard services (e.g., "AC Chemical Wash", "Gas Refill") and parts with standard prices to speed up billing.
+4.  **Estimates (Quotations):** Create professional quotes for HVAC jobs. Ability to "Convert Estimate to Invoice" once the customer accepts.
+5.  **Invoicing & POS:** Generate final bills. Support for "Paid," "Unpaid," and "Partial Payment" statuses.
+6.  **Expense Tracking:** Simple entry form for business costs (e.g., Transport, Tools, Spare Parts purchase) to calculate true profit.
+
+### 2.2. HVAC Specific Features
+* **Job Description Field:** Text area in invoices to describe specific HVAC issues (e.g., "Fixed capacitor for Master Bed 12000BTU unit").
+* **Warranty Note:** Option to toggle standard warranty terms on the invoice (e.g., "3 Months Service Warranty").
+
+### 2.3. Reporting
+* **Income vs. Expense Statement:** A simple table showing Net Profit.
+* **Customer Statement:** View all unpaid bills for a specific customer.
+
+---
+
+## 3. Technical Requirements (TRD)
+*How the system will be built based on K.D. Jayakody's recommendation.*
+
+### 3.1. Technology Stack
+* **Structure (HTML5):** Semantic HTML for structure.
+* **Styling (Tailwind CSS):** Utility-first CSS framework for rapid UI development.
+* **Components (DaisyUI):** Pre-built UI components (Modals, Tables, Cards, Buttons) based on Tailwind to make the system look professional without deep CSS knowledge.
+* **Logic (Vanilla JavaScript):** No framework (React/Vue) required initially. Pure JS for DOM manipulation and calculations.
+* **Icons:** FontAwesome or HeroIcons (SVG).
+
+### 3.2. Data Storage Strategy (Client-Side)
+* **LocalStorage:** Since this is a standalone browser app, use browser `localStorage` to save data (Customers, Invoices, Expenses) as JSON strings.
+    * *Note:* This means data stays on the specific device (Laptop/Tablet). No internet required.
+
+### 3.3. Data Models (JSON Structure)
+The system must validate data against these structures:
+
+**A. Customer Object:**
+```json
+{
+  "id": "cust_001",
+  "name": "Mr. Perera",
+  "phone": "077xxxxxxx",
+  "address": "Colombo 03",
+  "email": "optional"
+}
