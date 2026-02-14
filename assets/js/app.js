@@ -9,7 +9,7 @@ let systemSettings = {
     address: 'Colombo, Sri Lanka',
     phone: '0773919281',
     email: 'infocoolmech@gmail.com',
-    tagline: 'Reliable HVAC & Electrical Services',
+    tagline: 'Make your own weather today',
     warrantyText: 'Warranty subject to terms and conditions.',
     logo: '',
     username: 'admin', // Default username
