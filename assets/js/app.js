@@ -101,45 +101,42 @@ async function initApp() {
     setTimeout(checkStorageHealth, 2000);
 }
 
-// --- Auth System ---
 function renderLoginScreen() {
-    const loginHTML = `
-        <div id="login-screen" class="fixed inset-0 bg-blue-600 flex items-center justify-center z-[200] p-4 text-center">
-            <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md animate-slide-up relative overflow-hidden">
-                <!-- Decorative Circle -->
-                <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-50 rounded-full"></div>
-                
-                <div class="mb-8 relative">
-                    <div class="w-24 h-24 bg-blue-100 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-4 shadow-inner">
-                        <i class="fa-solid fa-lock text-3xl"></i>
-                    </div>
-                    <h2 class="text-3xl font-black text-gray-800 tracking-tighter">COOL MECH</h2>
-                    <p class="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Secure System v1.0</p>
-                </div>
-                
-                <div class="space-y-4">
-                    <div class="form-control">
-                        <label class="label text-xs font-black text-gray-400 uppercase ml-2">Username</label>
-                        <input type="text" id="login-user" placeholder="Enter username" 
-                            class="input input-bordered h-14 bg-gray-50 border-2 focus:border-blue-500 rounded-2xl font-bold" />
-                    </div>
-                    <div class="form-control">
-                        <label class="label text-xs font-black text-gray-400 uppercase ml-2">Password</label>
-                        <input type="password" id="login-pass" placeholder="••••••••" 
-                            class="input input-bordered h-14 bg-gray-50 border-2 focus:border-blue-500 rounded-2xl font-bold" />
-                    </div>
-                    <button onclick="handleLogin()" 
-                        class="btn btn-primary w-full h-16 text-white text-lg font-black shadow-xl shadow-blue-200 mt-6 rounded-2xl uppercase tracking-widest">
-                        ACCESS SYSTEM <i class="fa-solid fa-arrow-right ml-2"></i>
-                    </button>
-                </div>
+    document.getElementById('main-app').classList.add('hidden');
+
+    const loginDiv = document.createElement('div');
+    loginDiv.id = 'login-screen';
+    loginDiv.className = 'fixed inset-0 bg-gray-100 flex items-center justify-center z-50 animate-fade-in';
+
+    loginDiv.innerHTML = `
+        <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-gray-100 text-center">
+            <div class="w-20 h-20 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+                <i class="fa-solid fa-lock text-4xl"></i>
             </div>
+            <h2 class="text-3xl font-black text-gray-800 mb-2 uppercase tracking-tight">Secure Login</h2>
+            <p class="text-gray-400 text-sm mb-8 font-medium">System Secured</p>
+            
+            <form onsubmit="handleLogin(event)" class="space-y-5">
+                <div class="form-control text-left">
+                    <label class="label text-xs font-bold text-gray-400 uppercase ml-1">Username</label>
+                    <input type="text" id="login-user" class="input input-bordered w-full bg-gray-50 focus:bg-white transition-all font-bold" required>
+                </div>
+                <div class="form-control text-left">
+                    <label class="label text-xs font-bold text-gray-400 uppercase ml-1">Password</label>
+                    <input type="password" id="login-pass" class="input input-bordered w-full bg-gray-50 focus:bg-white transition-all font-bold" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full text-white font-black text-lg h-14 mt-4 shadow-xl shadow-blue-100">
+                    Log In <i class="fa-solid fa-arrow-right ml-2"></i>
+                </button>
+            </form>
         </div>
     `;
-    document.body.insertAdjacentHTML('afterbegin', loginHTML);
+
+    document.body.appendChild(loginDiv);
 }
 
-function handleLogin() {
+function handleLogin(e) {
+    e.preventDefault();
     const user = document.getElementById('login-user').value;
     const pass = document.getElementById('login-pass').value;
 
@@ -147,12 +144,57 @@ function handleLogin() {
         sessionStorage.setItem('coolmech_auth', 'true');
         initApp();
     } else {
-        alert("Machan, password eka waradi! Check karala balanna.");
+        alert("Machan, password eka hari na wage. Aayith balanna!");
     }
 }
 
-// --- Utils & Layout Helpers ---
+function logout() {
+    sessionStorage.removeItem('coolmech_auth');
+    location.reload();
+}
+
+function toggleTheme() {
+    systemSettings.theme = systemSettings.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', systemSettings.theme);
+    db.settings.put({ id: 'config', ...systemSettings });
+}
+
+function updateLogoDisplay() {
+    const sidebarLogo = document.getElementById('sidebar-logo-container');
+    if (systemSettings.logo) {
+        sidebarLogo.innerHTML = `<img src="${systemSettings.logo}" class="max-h-16 mx-auto mb-2 rounded-lg shadow-sm">`;
+    } else {
+        sidebarLogo.innerHTML = '';
+    }
+}
+
+function updateProfileDisplay() {
+    const profile = document.getElementById('sidebar-profile');
+    profile.innerHTML = `
+        <div class="px-6 py-4 flex items-center gap-4 bg-gray-50/50 border-y border-gray-100/50 mb-2">
+            <div class="avatar">
+                <div class="w-12 h-12 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-lg">
+                    ${systemSettings.profilePhoto ? `<img src="${systemSettings.profilePhoto}">` : `<i class="fa-solid fa-user-tie text-xl"></i>`}
+                </div>
+            </div>
+            <div class="overflow-hidden">
+                <p class="font-bold text-gray-800 truncate">${systemSettings.username}</p>
+                <p class="text-[10px] text-green-500 font-black uppercase tracking-widest flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Online
+                </p>
+            </div>
+        </div>
+    `;
+}
+
+function updateDate() {
+    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('current-date').innerText = new Date().toLocaleDateString(undefined, options);
+}
+
+// --- Navigation ---
 function setActiveNav(id) {
+    // UI Update
     document.querySelectorAll('.nav-item').forEach(el => {
         el.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
         el.classList.add('text-gray-600');
@@ -222,7 +264,7 @@ async function renderDashboard() {
             </div>
 
             <!-- Storage Health Indicator -->
-            <div id="storage-health-bar"></div>
+            <div id="storage-health-bar" class="animate-fade-in"></div>
 
             <!-- Recent Activity Section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -246,7 +288,7 @@ async function renderDashboard() {
                             <tbody class="text-sm font-medium">
                                 ${invoices.slice(-5).reverse().map(inv => `
                                     <tr class="hover:bg-gray-50 transition-colors border-b border-gray-50">
-                                        <td><span class="font-black text-gray-400">#INV-${inv.id}</span></td>
+                                        <td><span class="font-black text-gray-400">INV-${inv.id}</span></td>
                                         <td>${inv.customerName}</td>
                                         <td class="font-bold">LKR ${inv.total.toLocaleString()}</td>
                                         <td class="text-center">
@@ -254,45 +296,60 @@ async function renderDashboard() {
                                         </td>
                                     </tr>
                                 `).join('')}
-                                ${invoices.length === 0 ? '<tr><td colspan="4" class="text-center py-10 text-gray-300 italic font-bold">No recent invoices found.</td></tr>' : ''}
+                                ${invoices.length === 0 ? '<tr><td colspan="4" class="text-center py-8 text-gray-400">No invoices found. Add your first one!</td></tr>' : ''}
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <div class="space-y-6">
-                    <!-- Quick Actions -->
-                    <div class="glass-card p-6">
-                        <h3 class="font-bold text-gray-800 mb-6 uppercase tracking-widest text-[10px] border-b pb-2">Quick Actions</h3>
-                        <div class="space-y-3">
-                            <button onclick="renderCreateInvoice()" class="btn btn-primary w-full text-white font-black rounded-xl h-12 shadow-lg shadow-blue-100">
-                                <i class="fa-solid fa-plus mr-2"></i> NEW INVOICE
-                            </button>
-                            <button onclick="renderCustomers()" class="btn btn-outline border-blue-500 text-blue-600 hover:bg-blue-600 hover:text-white w-full font-black rounded-xl h-12">
-                                <i class="fa-solid fa-user-plus mr-2"></i> ADD CUSTOMER
-                            </button>
-                            <button onclick="renderSettings()" class="btn btn-ghost text-blue-400 w-full rounded-xl border-blue-50 border">
-                                <i class="fa-solid fa-chart-line mr-2"></i> VIEW REPORTS
-                            </button>
-                        </div>
+                <div class="glass-card p-6 bg-blue-600 text-white shadow-xl shadow-blue-200">
+                    <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-bolt-lightning text-yellow-300 animate-pulse"></i> Quick Actions
+                    </h3>
+                    <div class="space-y-3">
+                        <button onclick="renderCreateInvoice()" class="btn border-none bg-white text-blue-600 hover:bg-gray-100 w-full justify-start gap-4 h-14">
+                            <i class="fa-solid fa-plus-circle text-xl"></i>
+                            <div class="text-left">
+                                <div class="font-bold">Create Invoice</div>
+                                <div class="text-[10px] opacity-70">Add a new job entry</div>
+                            </div>
+                        </button>
+                        <button onclick="openAddCustomerModal()" class="btn border-none bg-blue-500 text-white hover:bg-blue-400 w-full justify-start gap-4 h-14">
+                            <i class="fa-solid fa-user-plus text-xl"></i>
+                             <div class="text-left">
+                                <div class="font-bold">Add Customer</div>
+                                <div class="text-[10px] opacity-70">New business lead</div>
+                            </div>
+                        </button>
+                         <button onclick="renderReports()" class="btn border-none bg-blue-500 text-white hover:bg-blue-400 w-full justify-start gap-4 h-14">
+                            <i class="fa-solid fa-file-export text-xl"></i>
+                             <div class="text-left">
+                                <div class="font-bold">Summary Report</div>
+                                <div class="text-[10px] opacity-70">Weekly profit check</div>
+                            </div>
+                        </button>
+                        <button onclick="logout()" class="btn btn-ghost btn-sm w-full font-bold opacity-60 hover:opacity-100 mt-4 underline decoration-2">Sign Out</button>
                     </div>
                 </div>
             </div>
         </div>
     `;
-    
-    // 💡 Add dynamic check for storage indicators immediately
-   // --- Customer Components ---
+}
+
+// --- Customer Component ---
 async function renderCustomers() {
     setActiveNav('nav-customers');
-    document.getElementById('page-title').innerText = 'Customer Management';
+    document.getElementById('page-title').innerText = 'Customer Directory';
     const content = document.getElementById('app-content');
     const customers = await db.customers.toArray();
 
     content.innerHTML = `
         <div class="animate-fade-in space-y-6">
             <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <p class="text-sm font-bold text-gray-500 ml-2 uppercase tracking-widest"><i class="fa-solid fa-address-book text-blue-500 mr-2"></i> Total: ${customers.length}</p>
+                <div class="relative w-full max-w-xs">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="Search customers..." class="input input-bordered w-full pl-12 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-blue-500/50">
+                </div>
                 <button onclick="openAddCustomerModal()" class="btn btn-primary text-white gap-2 font-black shadow-lg shadow-blue-100">
                     <i class="fa-solid fa-plus font-black"></i> New Customer
                 </button>
@@ -300,52 +357,67 @@ async function renderCustomers() {
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 ${customers.map(c => `
-                    <div class="glass-card hover:border-blue-500 transition-all p-6 group relative overflow-hidden bg-white">
-                         <div class="flex justify-between items-start mb-4 relative z-10">
-                            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl font-black group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    <div class="glass-card p-6 border-l-4 border-blue-500 hover:scale-[1.02] transition-transform duration-300">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-black text-xl shadow-sm uppercase">
                                 ${c.name.charAt(0)}
                             </div>
                             <div class="dropdown dropdown-end">
-                                <label tabindex="0" class="btn btn-ghost btn-circle btn-xs opacity-50"><i class="fa-solid fa-ellipsis-vertical"></i></label>
-                                <ul tabindex="0" class="dropdown-content z-[2] menu p-2 shadow-2xl bg-base-100 rounded-xl w-40 border border-gray-100 font-bold">
+                                <label tabindex="0" class="btn btn-ghost btn-circle btn-sm"><i class="fa-solid fa-ellipsis-vertical"></i></label>
+                                <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow-2xl bg-base-100 rounded-box w-52 border border-gray-100">
                                     <li><a onclick="editCustomer(${c.id})"><i class="fa-solid fa-pen text-blue-500"></i> Edit Details</a></li>
-                                    <li><a href="https://wa.me/${c.phone}" target="_blank" class="text-green-600"><i class="fa-brands fa-whatsapp"></i> Send SMS</a></li>
-                                    <li><a onclick="deleteCustomer(${c.id})" class="text-red-500"><i class="fa-solid fa-trash"></i> Remove</a></li>
+                                    <li><a onclick="openMessageModal('${c.name}', '${c.phone}')"><i class="fa-solid fa-message text-green-500"></i> Send SMS</a></li>
+                                    <li><a onclick="deleteCustomer(${c.id})" class="text-red-500 font-black"><i class="fa-solid fa-trash"></i> Remove Customer</a></li>
                                 </ul>
                             </div>
                         </div>
-                        <h3 class="font-black text-gray-800 text-xl mb-1 truncate">${c.name}</h3>
-                        <p class="text-blue-600 font-black text-sm mb-4"><i class="fa-solid fa-phone mr-1"></i> ${c.phone}</p>
-                        <div class="space-y-2 text-xs text-gray-400 font-bold uppercase tracking-wider">
-                            <p class="truncate"><i class="fa-solid fa-envelope w-4"></i> ${c.email || 'No email'}</p>
-                            <p class="truncate"><i class="fa-solid fa-map-marker-alt w-4"></i> ${c.address}</p>
+
+                        <h3 class="text-lg font-black text-gray-800 mb-1">${c.name}</h3>
+                        <div class="space-y-1 text-sm font-medium text-gray-500">
+                            <p class="flex items-center gap-2"><i class="fa-solid fa-phone text-blue-400 text-xs"></i> ${c.phone}</p>
+                            <p class="flex items-center gap-2 truncate"><i class="fa-solid fa-envelope text-blue-400 text-xs"></i> ${c.email || 'No email'}</p>
+                            <p class="flex items-center gap-2 truncate text-xs"><i class="fa-solid fa-location-dot text-blue-400 text-[10px]"></i> ${c.address}</p>
                         </div>
+
                         <div class="mt-6 flex gap-2">
-                             <a href="tel:${c.phone}" class="btn btn-sm btn-outline btn-primary flex-1 font-black rounded-lg uppercase tracking-widest text-[10px]">Call Client</a>
+                            <a href="tel:${c.phone}" class="btn btn-outline btn-sm flex-1 rounded-lg gap-2 font-bold hover:bg-blue-600 hover:border-blue-600"><i class="fa-solid fa-phone"></i> Call</a>
+                            <button onclick="openMessageModal('${c.name}', '${c.phone}')" class="btn btn-primary btn-sm flex-1 rounded-lg gap-2 text-white font-bold"><i class="fa-solid fa-paper-plane"></i> SMS</button>
                         </div>
                     </div>
                 `).join('')}
-                ${customers.length === 0 ? '<div class="col-span-full py-20 text-center text-gray-400 uppercase font-black tracking-widest opacity-30 italic">No Customers Found</div>' : ''}
+                 ${customers.length === 0 ? `
+                    <div class="col-span-full py-20 text-center">
+                        <div class="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                             <i class="fa-solid fa-user-slash text-3xl"></i>
+                        </div>
+                        <p class="text-gray-400 font-bold uppercase tracking-widest text-sm">No Customers Found</p>
+                        <p class="text-gray-300 text-xs">Click the blue button above to add a business lead.</p>
+                    </div>` : ''}
             </div>
         </div>
     `;
 }
 
+// --- Customer CRUD ---
 function openAddCustomerModal() {
-    openModal('New Customer Record', `
-        <div class="space-y-4">
-            <div class="form-control w-full">
-                <label class="label text-xs font-black uppercase text-gray-400">Shop / Name</label>
-                <input type="text" id="cust-name" placeholder="Enter name" class="input input-bordered w-full font-bold h-12 rounded-xl" />
+    openModal('New Business Lead', `
+        <div class="form-control w-full">
+            <label class="label"><span class="label-text">Full Name</span></label>
+            <input type="text" id="cust-name" placeholder="Machan's Name" class="input input-bordered w-full" />
+        </div>
+        <div class="flex gap-4">
+             <div class="form-control w-1/2">
+                <label class="label"><span class="label-text">Phone Number</span></label>
+                <input type="text" id="cust-phone" placeholder="071..." class="input input-bordered w-full" />
             </div>
-            <div class="form-control w-full">
-                <label class="label text-xs font-black uppercase text-gray-400">Phone</label>
-                <input type="text" id="cust-phone" placeholder="07XXXXXXXX" class="input input-bordered w-full font-bold h-12 rounded-xl" />
+            <div class="form-control w-1/2">
+                <label class="label"><span class="label-text">Email (Optional)</span></label>
+                <input type="email" id="cust-email" placeholder="example@gmail.com" class="input input-bordered w-full" />
             </div>
-            <div class="form-control w-full">
-                <label class="label text-xs font-black uppercase text-gray-400">Address (Optional)</label>
-                <textarea id="cust-addr" placeholder="Location details" class="textarea textarea-bordered w-full font-bold h-20 rounded-xl"></textarea>
-            </div>
+        </div>
+        <div class="form-control w-full">
+            <label class="label"><span class="label-text">Address</span></label>
+            <textarea id="cust-address" class="textarea textarea-bordered" placeholder="Colombo..."></textarea>
         </div>
     `, 'saveCustomer()');
 }
@@ -353,55 +425,110 @@ function openAddCustomerModal() {
 async function saveCustomer() {
     const name = document.getElementById('cust-name').value;
     const phone = document.getElementById('cust-phone').value;
-    const address = document.getElementById('cust-addr').value;
+    const email = document.getElementById('cust-email').value;
+    const address = document.getElementById('cust-address').value;
 
-    if (!name || !phone) return alert("Hariyata purawanna machan.");
+    if (!name || !phone) return alert("Required fields missing");
 
-    await db.customers.add({ name, phone, address, email: '' });
+    await db.customers.add({ name, phone, email, address });
     closeModal();
     renderCustomers();
 }
 
 async function deleteCustomer(id) {
-    if (confirm('Me customerwa ain karannama onaද?')) {
+    if (confirm('Meka delete karannada? Sure da?')) {
         await db.customers.delete(id);
         renderCustomers();
     }
 }
 
-// --- Stock Components ---
+// --- Communication Logic ---
+async function logCommunication(type, targetName, targetContact, details = '') {
+    await db.logs.add({
+        type: type,
+        target: targetName,
+        contact: targetContact,
+        details: details,
+        date: new Date().toISOString()
+    });
+}
+
+function openMessageModal(name, phone) {
+    const template = `Hello ${name}, me COOL MECH eken katha karanne. Oyage service eka gana kiyanna...`;
+    openModal('Send Quick Message', `
+        <div class="space-y-4">
+            <div class="form-control">
+                <label class="label text-xs font-bold text-gray-400 uppercase">To: ${name}</label>
+                <input type="text" disabled value="${phone}" class="input input-bordered opacity-60">
+            </div>
+            <div class="form-control">
+                <label class="label text-xs font-bold text-gray-400 uppercase">Message Content</label>
+                <textarea id="sms-body" class="textarea textarea-bordered h-32 font-bold">${template}</textarea>
+            </div>
+        </div>
+    `, `sendSMS('${phone}')`);
+}
+
+function sendSMS(phone) {
+    const body = document.getElementById('sms-body').value;
+    const url = `sms:${phone}?body=${encodeURIComponent(body)}`;
+    logCommunication('sms', 'Customer', phone, body);
+    window.location.href = url;
+    closeModal();
+}
+
+// --- Service & Stock Component ---
 async function renderServices() {
     setActiveNav('nav-services');
-    document.getElementById('page-title').innerText = 'Stocks & Parts';
+    document.getElementById('page-title').innerText = 'Stock & Services';
     const content = document.getElementById('app-content');
     const services = await db.services.toArray();
 
     content.innerHTML = `
         <div class="animate-fade-in space-y-6">
             <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                <div class="flex gap-2">
-                    <span class="badge badge-lg bg-blue-50 text-blue-600 border-none font-bold">${services.length} Total Parts</span>
-                </div>
-                <button onclick="openAddServiceModal()" class="btn btn-primary text-white font-black shadow-lg shadow-blue-100">
-                    <i class="fa-solid fa-plus mr-2"></i> ADD TO STOCK
+                 <div class="flex gap-2">
+                    <span class="badge badge-info h-8 font-bold px-4 uppercase text-[10px]">All Parts: ${services.length}</span>
+                    <span class="badge badge-error h-8 font-bold px-4 uppercase text-[10px]">Restock Needed: ${services.filter(s => s.inventory <= 5).length}</span>
+                 </div>
+                <button onclick="openAddServiceModal()" class="btn btn-primary text-white gap-2 font-black shadow-lg shadow-blue-100">
+                    <i class="fa-solid fa-plus font-black"></i> Add Stock/Service
                 </button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 ${services.map(s => `
-                    <div class="glass-card p-6 bg-white hover:border-blue-500 transition-all">
-                        <div class="flex justify-between mb-4">
-                            <span class="badge ${s.inventory > 5 ? 'badge-success' : 'badge-error'} badge-sm font-black text-[9px] uppercase tracking-tighter">${s.inventory > 5 ? 'In Stock' : 'Low Stock'}</span>
-                            <button onclick="deleteService(${s.id})" class="text-red-300 hover:text-red-500"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                        <h3 class="font-black text-gray-800 text-lg mb-1 truncate uppercase">${s.name}</h3>
-                        <p class="text-[10px] text-gray-400 font-bold uppercase mb-4">${s.type}</p>
-                        <div class="flex justify-between items-end border-t pt-4">
-                            <div><p class="text-[9px] font-black text-gray-400 uppercase">Price</p><p class="text-xl font-black text-blue-600">LKR ${s.price}</p></div>
-                            <div class="text-right"><p class="text-[9px] font-black text-gray-400 uppercase">Qty</p><p class="text-xl font-black">${s.inventory}</p></div>
+                    <div class="glass-card overflow-hidden group hover:border-blue-400 transition-colors">
+                        <div class="p-5">
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="badge ${s.inventory > 5 ? 'badge-success' : 'badge-error'} badge-sm rounded uppercase text-[10px] font-black h-6 px-3">
+                                    ${s.inventory > 5 ? 'In Stock' : 'Low Stock'}
+                                </div>
+                                <div class="dropdown dropdown-end">
+                                    <label tabindex="0" class="btn btn-ghost btn-circle btn-xs opacity-40 group-hover:opacity-100"><i class="fa-solid fa-ellipsis-vertical"></i></label>
+                                    <ul tabindex="0" class="dropdown-content z-[2] menu p-2 shadow-2xl bg-base-100 rounded-box w-40 border border-gray-100">
+                                        <li><a onclick="editService(${s.id})"><i class="fa-solid fa-pen text-blue-500"></i> Edit</a></li>
+                                        <li><a onclick="deleteService(${s.id})" class="text-red-500 font-bold"><i class="fa-solid fa-trash"></i> Delete</a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <h3 class="font-black text-gray-800 text-lg mb-1 truncate">${s.name}</h3>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-4">${s.type}</p>
+                            
+                            <div class="flex justify-between items-end border-t pt-4 border-gray-50">
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-black uppercase">Service Price</p>
+                                    <p class="text-xl font-black text-blue-600 leading-none">LKR ${s.price.toLocaleString()}</p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-[10px] text-gray-400 font-black uppercase">Qty</p>
+                                    <p class="text-xl font-black text-gray-800 leading-none">${s.inventory}</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 `).join('')}
+                ${services.length === 0 ? '<div class="col-span-full py-10 text-center text-gray-400">Inventory eka empty machan. Parts add karala patan ganna.</div>' : ''}
             </div>
         </div>
     `;
@@ -409,16 +536,28 @@ async function renderServices() {
 
 function openAddServiceModal() {
     openModal('Stock / Service Item', `
-        <div class="space-y-4">
-            <input type="text" id="svc-name" placeholder="Item Name (e.g. Capacitor)" class="input input-bordered w-full font-bold h-12 rounded-xl" />
-            <select id="svc-type" class="select select-bordered w-full font-bold h-12 rounded-xl">
-                <option>Part / Inventory</option>
-                <option>Repair / Labour</option>
-            </select>
-            <div class="flex gap-4">
-                <input type="number" id="svc-price" placeholder="Price (LKR)" class="input input-bordered flex-1 font-bold h-12 rounded-xl" />
-                <input type="number" id="svc-inv" placeholder="Initial Qty" class="input input-bordered w-24 font-bold h-12 rounded-xl" />
+        <div class="form-control w-full">
+            <label class="label"><span class="label-text">Item/Service Name</span></label>
+            <input type="text" id="svc-name" placeholder="e.g. Capacitor 25uF" class="input input-bordered w-full" />
+        </div>
+        <div class="flex gap-4">
+             <div class="form-control w-1/2">
+                <label class="label"><span class="label-text">Type</span></label>
+                <select id="svc-type" class="select select-bordered">
+                    <option>Part / Inventory</option>
+                    <option>Repair / Labour</option>
+                    <option>Transportation</option>
+                    <option>Other</option>
+                </select>
             </div>
+            <div class="form-control w-1/2">
+                <label class="label"><span class="label-text">Price (LKR)</span></label>
+                <input type="number" id="svc-price" class="input input-bordered" />
+            </div>
+        </div>
+        <div class="form-control w-full">
+            <label class="label"><span class="label-text">Quantity (Inventory Only)</span></label>
+            <input type="number" id="svc-inv" value="0" class="input input-bordered" />
         </div>
     `, 'saveService()');
 }
@@ -429,46 +568,395 @@ async function saveService() {
     const price = parseFloat(document.getElementById('svc-price').value);
     const inventory = parseInt(document.getElementById('svc-inv').value);
 
-    if (!name || isNaN(price)) return alert("Data missing machan.");
+    if (!name || isNaN(price)) return alert("Fields missing");
 
-    await db.services.add({ name, type, price, inventory: inventory || 0 });
+    await db.services.add({ name, type, price, inventory });
     closeModal();
     renderServices();
 }
 
-async function deleteService(id) {
-    if(confirm("Meka ain karannada?")) { await db.services.delete(id); renderServices(); }
-}
-
-// --- Invoicing Components ---
+// --- Invoice Components ---
 async function renderInvoices() {
     setActiveNav('nav-invoices');
-    document.getElementById('page-title').innerText = 'System Invoices';
-    const invoices = await db.invoices.toArray();
+    document.getElementById('page-title').innerText = 'Invoices & Quotes';
     const content = document.getElementById('app-content');
+    const invoices = await db.invoices.toArray();
 
     content.innerHTML = `
         <div class="animate-fade-in space-y-6">
-            <div class="flex justify-end p-4">
-                <button onclick="renderCreateInvoice()" class="btn btn-primary text-white font-black shadow-lg">
-                    CREATE NEW INVOICE
+            <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <div class="flex gap-4">
+                     <button onclick="renderCreateInvoice()" class="btn btn-primary text-white gap-2 font-black shadow-lg shadow-blue-100">
+                        <i class="fa-solid fa-file-invoice"></i> Create New
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card overflow-hidden">
+                <table class="table w-full">
+                    <thead>
+                        <tr class="text-gray-400 border-b border-gray-100 uppercase text-[10px]">
+                            <th class="bg-transparent py-4 font-black">ID</th>
+                            <th class="bg-transparent py-4 font-black">Date</th>
+                            <th class="bg-transparent py-4 font-black">Customer</th>
+                            <th class="bg-transparent py-4 font-black">Total</th>
+                            <th class="bg-transparent py-4 font-black">Status</th>
+                            <th class="bg-transparent py-4 font-black text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm font-medium">
+                        ${invoices.reverse().map(inv => `
+                            <tr class="hover:bg-gray-50 border-b border-gray-50 transition-colors">
+                                <td class="font-black text-gray-400">INV-${inv.id}</td>
+                                <td>${new Date(inv.date).toLocaleDateString()}</td>
+                                <td class="font-bold text-gray-800">${inv.customerName}</td>
+                                <td class="text-blue-600 font-black">LKR ${inv.total.toLocaleString()}</td>
+                                <td><span class="badge ${inv.status === 'Paid' ? 'badge-success' : 'badge-warning'} badge-sm font-black text-[10px]">${inv.status}</span></td>
+                                <td class="text-right flex justify-end gap-2">
+                                    <button onclick="printInvoice(${inv.id})" class="btn btn-ghost btn-xs text-blue-500"><i class="fa-solid fa-print"></i></button>
+                                    <button onclick="deleteInvoice(${inv.id})" class="btn btn-ghost btn-xs text-red-500"><i class="fa-solid fa-trash"></i></button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                        ${invoices.length === 0 ? '<tr><td colspan="6" class="text-center py-20 text-gray-400 italic uppercase tracking-widest font-black">No invoices yet</td></tr>' : ''}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+async function renderCreateInvoice() {
+    setActiveNav('nav-invoices');
+    document.getElementById('page-title').innerText = 'New Invoice';
+    const content = document.getElementById('app-content');
+    const customers = await db.customers.toArray();
+    const services = await db.services.toArray();
+    invoiceItems = [];
+
+    content.innerHTML = `
+        <div class="animate-fade-in grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Step 1: Customer & Details -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-1 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs"></i> Customer Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="form-control">
+                            <label class="label text-xs font-bold uppercase text-gray-400">Select Customer</label>
+                            <select id="inv-cust" class="select select-bordered w-full font-bold">
+                                <option disabled selected>Viyaparakayage nama thoranna</option>
+                                ${customers.map(c => `<option value="${c.id}">${c.name} (${c.phone})</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-control">
+                            <label class="label text-xs font-bold uppercase text-gray-400">Job Description</label>
+                            <input type="text" id="inv-desc" placeholder="e.g. AC Repair & Service" class="input input-bordered w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Line Items -->
+                <div class="glass-card p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
+                        <i class="fa-solid fa-2 bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs"></i> Line Items
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 bg-gray-50 p-4 rounded-xl">
+                        <div class="form-control">
+                             <label class="label text-xs font-bold uppercase text-gray-400">Select Item/Part</label>
+                            <select id="item-select" class="select select-bordered w-full">
+                                <option disabled selected>Item ekak thoranna</option>
+                                ${services.map(s => `<option value="${s.id}">${s.name} - LKR ${s.price}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-control">
+                            <label class="label text-xs font-bold uppercase text-gray-400">Quantity</label>
+                            <input type="number" id="item-qty" value="1" class="input input-bordered font-bold">
+                        </div>
+                        <div class="form-control self-end">
+                            <button onclick="addInvoiceItem()" class="btn btn-primary text-white font-black">Add Item</button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="table w-full">
+                            <thead>
+                                <tr class="text-gray-400 border-b border-gray-100 uppercase text-[10px]">
+                                    <th class="bg-transparent font-black">Description</th>
+                                    <th class="bg-transparent font-black">Price</th>
+                                    <th class="bg-transparent font-black">Qty</th>
+                                    <th class="bg-transparent font-black">Subtotal</th>
+                                    <th class="bg-transparent font-black"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items-body" class="text-sm font-medium">
+                                <!-- Dynamic Items -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                 <div class="glass-card p-6 bg-blue-600 text-white shadow-xl shadow-blue-100">
+                    <h3 class="text-xl font-bold mb-6">Invoice Summary</h3>
+                    <div class="space-y-4 border-b border-blue-400/50 pb-4 mb-4">
+                        <div class="flex justify-between">
+                            <span class="opacity-70 font-medium">Subtotal</span>
+                            <span id="summary-subtotal" class="font-bold">LKR 0</span>
+                        </div>
+                         <div class="flex justify-between">
+                            <span class="opacity-70 font-medium">Tax/Other</span>
+                            <span class="font-bold">LKR 0</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mb-8">
+                        <span class="text-sm font-black uppercase tracking-widest text-blue-200">Grand Total</span>
+                        <span id="summary-total" class="text-3xl font-black">LKR 0</span>
+                    </div>
+
+                    <div class="form-control mb-6">
+                         <label class="label cursor-pointer justify-start gap-4">
+                            <input type="checkbox" id="inv-paid" class="checkbox checkbox-white border-2 border-white/50" />
+                            <span class="label-text text-white font-bold">Mark as Fully Paid</span>
+                        </label>
+                    </div>
+
+                    <button onclick="saveInvoice()" class="btn bg-white text-blue-600 border-none hover:bg-gray-100 w-full h-14 text-lg font-black shadow-xl shadow-blue-800/20">
+                        Generate Invoice <i class="fa-solid fa-check-circle ml-2"></i>
+                    </button>
+                </div>
+
+                <button onclick="renderInvoices()" class="btn btn-ghost w-full font-bold opacity-60">Cancel & Go Back</button>
+            </div>
+        </div>
+    `;
+}
+
+async function addInvoiceItem() {
+    const serviceId = parseInt(document.getElementById('item-select').value);
+    const qty = parseInt(document.getElementById('item-qty').value);
+
+    if (isNaN(serviceId)) return alert("Item ekak thoranna machan.");
+
+    const service = await db.services.get(serviceId);
+    if (!service) return;
+
+    invoiceItems.push({
+        serviceId: service.id,
+        name: service.name,
+        price: service.price,
+        qty: qty,
+        subtotal: service.price * qty
+    });
+
+    updateInvoicePreview();
+}
+
+function removeInvoiceItem(index) {
+    invoiceItems.splice(index, 1);
+    updateInvoicePreview();
+}
+
+function updateInvoicePreview() {
+    const body = document.getElementById('invoice-items-body');
+    const subtotalDisplay = document.getElementById('summary-subtotal');
+    const totalDisplay = document.getElementById('summary-total');
+
+    let total = 0;
+    body.innerHTML = invoiceItems.map((item, index) => {
+        total += item.subtotal;
+        return `
+            <tr class="border-b border-gray-50">
+                <td class="font-bold text-gray-800">${item.name}</td>
+                <td>LKR ${item.price.toLocaleString()}</td>
+                <td><span class="badge badge-ghost font-black border-none">${item.qty}</span></td>
+                <td class="font-bold">LKR ${item.subtotal.toLocaleString()}</td>
+                <td class="text-right">
+                    <button onclick="removeInvoiceItem(${index})" class="btn btn-ghost btn-xs text-red-500"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    subtotalDisplay.innerText = `LKR ${total.toLocaleString()}`;
+    totalDisplay.innerText = `LKR ${total.toLocaleString()}`;
+}
+
+async function saveInvoice() {
+    const customerId = parseInt(document.getElementById('inv-cust').value);
+    const description = document.getElementById('inv-desc').value;
+    const isPaid = document.getElementById('inv-paid').checked;
+
+    if (isNaN(customerId)) return alert("Viyaparakayage nama thoranna machan.");
+    if (invoiceItems.length === 0) return alert("Item ekak wath nathuwa bill ekak gahanna ba machan.");
+
+    const customer = await db.customers.get(customerId);
+    const total = invoiceItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+    const invoiceId = await db.invoices.add({
+        customerId,
+        customerName: customer.name,
+        jobDescription: description,
+        items: invoiceItems,
+        total,
+        status: isPaid ? 'Paid' : 'Pending',
+        date: new Date().toISOString()
+    });
+
+    alert("Invoice Successfully Created! ✅");
+    renderInvoices();
+}
+
+async function printInvoice(id) {
+    const invoice = await db.invoices.get(id);
+    if (!invoice) return;
+
+    const printWindow = window.open('', '_blank');
+    const docTitle = (invoice.status === 'Paid') ? 'INVOICE' : 'QUOTATION';
+
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>${docTitle} - ${invoice.id}</title>
+            <link href="https://cdn.jsdelivr.net/npm/daisyui@3.9.4/dist/full.css" rel="stylesheet" type="text/css" />
+            <script src="https://cdn.tailwindcss.com"></script>
+            <style>
+                @media print {
+                    .no-print { display: none; }
+                    body { font-size: 12px; }
+                }
+            </style>
+        </head>
+        <body class="p-10 bg-white">
+            <div class="max-w-4xl mx-auto border p-8 rounded-lg shadow-sm">
+                <div class="flex justify-between items-start mb-10 pb-10 border-b">
+                    <div>
+                        <h1 class="text-4xl font-black text-blue-600 uppercase mb-2">${systemSettings.companyName}</h1>
+                        <p class="text-gray-500 font-bold uppercase tracking-widest text-sm mb-4">${systemSettings.tagline}</p>
+                        <div class="text-xs text-gray-500 space-y-1 font-medium">
+                            <p>${systemSettings.address}</p>
+                            <p>Phone: ${systemSettings.phone}</p>
+                            <p>Email: ${systemSettings.email || ''}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <h2 class="text-5xl font-black text-gray-800 uppercase mb-2">${docTitle}</h2>
+                        <div class="bg-gray-100 p-4 rounded-xl inline-block text-left">
+                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Document No</p>
+                            <p class="text-xl font-black text-gray-800 mb-2">${docTitle.substring(0, 3)}-${invoice.id}</p>
+                            <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest">Date Issued</p>
+                            <p class="text-sm font-bold">${new Date(invoice.date).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-10">
+                    <p class="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-2">Bill To</p>
+                    <p class="text-2xl font-black text-gray-800 uppercase mb-1">${invoice.customerName}</p>
+                    <p class="text-gray-500 font-bold italic">${invoice.jobDescription || 'Standard functionality check & service'}</p>
+                </div>
+
+                <table class="table w-full mb-10">
+                    <thead>
+                        <tr class="bg-gray-50 border-y-2 border-gray-100 uppercase text-[10px] font-black">
+                            <th class="py-4">Description</th>
+                            <th class="text-center py-4">Price</th>
+                            <th class="text-center py-4">Qty</th>
+                            <th class="text-right py-4">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm font-bold">
+                        ${invoice.items.map(item => `
+                            <tr class="border-b border-gray-50">
+                                <td class="py-4">${item.name}</td>
+                                <td class="text-center py-4">LKR ${item.price.toLocaleString()}</td>
+                                <td class="text-center py-4">${item.qty}</td>
+                                <td class="text-right py-4 font-black">LKR ${item.subtotal.toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+
+                <div class="flex justify-end mb-10">
+                    <div class="w-64 space-y-3">
+                         <div class="flex justify-between text-sm opacity-50 font-bold uppercase tracking-widest">
+                            <span>Subtotal</span>
+                            <span>LKR ${invoice.total.toLocaleString()}</span>
+                        </div>
+                        <div class="flex justify-between text-2xl font-black text-blue-600 border-t pt-2">
+                            <span>Grand Total</span>
+                            <span>LKR ${invoice.total.toLocaleString()}</span>
+                        </div>
+                        ${invoice.status === 'Paid' ? `
+                            <div class="mt-4 border-2 border-green-500 text-green-500 font-black text-center py-2 rounded-lg rotate-[-5deg] inline-block px-10">
+                                FULLY PAID
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-20 pt-10 mt-10 border-t items-end">
+                    <div class="text-[10px] text-gray-400">
+                        <p class="font-black uppercase tracking-widest mb-4">Terms & Conditions</p>
+                        <p class="leading-relaxed font-medium">${systemSettings.warrantyText ? systemSettings.warrantyText.replace(/\n/g, '<br>') : 'Warranty covers manufacturing defects only. Service calls are billable after 30 days. Logos and brands are properties of their respective owners.'}</p>
+                    </div>
+                    <div class="text-center border-t-2 border-gray-100 pt-4">
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Authorized Signature</p>
+                    </div>
+                </div>
+
+                <div class="text-center mt-20 no-print">
+                    <button onclick="window.print()" class="btn btn-primary btn-lg text-white font-black px-12 rounded-full shadow-2xl shadow-blue-200">Print Now <i class="fa-solid fa-print ml-4"></i></button>
+                     <p class="mt-4 text-xs font-bold text-gray-400 uppercase tracking-widest">"${systemSettings.tagline || 'Thank you for your business!'}"</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+async function deleteInvoice(id) {
+    if (confirm('Delete invoice?')) {
+        await db.invoices.delete(id);
+        renderInvoices();
+    }
+}
+
+// --- Expenses Component ---
+async function renderExpenses() {
+    setActiveNav('nav-expenses');
+    document.getElementById('page-title').innerText = 'Expense Tracking';
+    const content = document.getElementById('app-content');
+    const expenses = await db.expenses.toArray();
+
+    content.innerHTML = `
+        <div class="animate-fade-in space-y-6">
+            <div class="flex justify-between items-center bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+                <button onclick="openAddExpenseModal()" class="btn btn-error text-white gap-2 font-black shadow-lg shadow-red-100">
+                    <i class="fa-solid fa-minus-circle"></i> New Expense
                 </button>
             </div>
-            <div class="glass-card overflow-hidden bg-white shadow-xl rounded-3xl">
+
+            <div class="glass-card overflow-hidden">
                 <table class="table w-full">
-                    <thead class="bg-gray-50 uppercase text-[10px] font-black text-gray-400 border-b">
-                        <tr><th class="py-4">INV #</th><th>Customer</th><th class="text-right">Total Amount</th><th>Status</th><th class="text-center">Action</th></tr>
+                    <thead>
+                        <tr class="text-gray-400 border-b border-gray-100 uppercase text-[10px]">
+                            <th class="bg-transparent py-4 font-black">Date</th>
+                            <th class="bg-transparent py-4 font-black">Description</th>
+                            <th class="bg-transparent py-4 font-black text-center">Category</th>
+                            <th class="bg-transparent py-4 font-black text-right">Amount</th>
+                        </tr>
                     </thead>
-                    <tbody class="font-bold text-sm">
-                        ${invoices.reverse().map(inv => `
-                            <tr class="hover:bg-gray-50 border-b border-gray-50">
-                                <td><span class="text-gray-400 font-black">#${inv.id}</span></td>
-                                <td>${inv.customerName}</td>
-                                <td class="text-right text-blue-600">LKR ${inv.total.toLocaleString()}</td>
-                                <td><span class="badge ${inv.status === 'Paid' ? 'badge-success' : 'badge-warning'} badge-sm font-black">${inv.status}</span></td>
-                                <td class="text-center">
-                                    <button onclick="printInvoice(${inv.id})" class="btn btn-ghost btn-xs text-blue-500"><i class="fa-solid fa-print"></i></button>
-                                </td>
+                    <tbody class="text-sm font-medium">
+                        ${expenses.reverse().map(e => `
+                            <tr class="hover:bg-gray-50 border-b border-gray-50 transition-colors">
+                                <td>${e.date ? new Date(e.date).toLocaleDateString() : 'N/A'}</td>
+                                <td class="font-bold text-gray-800">${e.description}</td>
+                                <td class="text-center"><span class="badge badge-ghost badge-sm uppercase text-[9px] font-bold">${e.category || 'Other'}</span></td>
+                                <td class="text-red-500 font-black text-right">LKR ${e.amount.toLocaleString()}</td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -478,150 +966,120 @@ async function renderInvoices() {
     `;
 }
 
-async function renderCreateInvoice() {
-    const custs = await db.customers.toArray();
-    const svcs = await db.services.toArray();
-    invoiceItems = [];
-    document.getElementById('app-content').innerHTML = `
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in pb-20">
-            <div class="space-y-6">
-                <div class="glass-card p-6 bg-white shadow-xl rounded-3xl">
-                    <h3 class="font-black mb-4 uppercase text-xs tracking-widest text-gray-400 underline decoration-blue-500 underline-offset-8">1. Select Buyer</h3>
-                    <select id="inv-cust" class="select select-bordered w-full font-black h-12 rounded-xl text-blue-700 bg-blue-50/30">
-                        <option disabled selected>Customer Thoranna</option>
-                        ${custs.map(c => `<option value="${c.id}">${c.name}</option>`).join('')}
-                    </select>
-                </div>
-                <div class="glass-card p-6 bg-white shadow-xl rounded-3xl">
-                    <h3 class="font-black mb-4 uppercase text-xs tracking-widest text-gray-400 underline decoration-blue-500 underline-offset-8">2. Add Parts/Service</h3>
-                    <div class="flex gap-2">
-                        <select id="item-select" class="select select-bordered flex-1 font-bold h-12 rounded-xl">
-                            ${svcs.map(s => `<option value="${s.id}">${s.name} (LKR ${s.price})</option>`).join('')}
-                        </select>
-                        <input type="number" id="item-qty" value="1" class="input input-bordered w-20 font-black text-center h-12 rounded-xl">
-                        <button onclick="addInvoiceItem()" class="btn btn-primary font-black h-12 px-6 rounded-xl">ADD</button>
-                    </div>
-                    <div class="mt-8 border-t pt-4">
-                        <table class="table w-full">
-                            <tbody id="invoice-items-body"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="glass-card p-10 bg-blue-600 text-white shadow-2xl rounded-[3rem] relative overflow-hidden flex flex-col justify-between min-h-[500px]">
-                <div class="relative z-10">
-                    <h3 class="text-xl font-bold mb-2 uppercase tracking-widest opacity-60">Total Bill</h3>
-                    <p id="summary-total" class="text-7xl font-black italic tracking-tighter mb-12 animate-pulse">LKR 0</p>
-                    <label class="label cursor-pointer justify-start gap-4 bg-blue-700/50 p-6 rounded-3xl mb-8 border border-white/10">
-                        <input type="checkbox" id="inv-paid" class="checkbox checkbox-white border-2 border-white/50" />
-                        <span class="label-text text-white font-black text-lg uppercase">Full Payment Received</span>
-                    </label>
-                </div>
-                <button onclick="saveInvoice()" class="btn bg-white text-blue-600 border-none h-20 text-2xl font-black rounded-3xl shadow-xl hover:scale-105 transition-transform">
-                    FINALIZE BILL <i class="fa-solid fa-check-circle ml-2"></i>
-                </button>
-            </div>
-        </div>
-    `;
-}
-
-function addInvoiceItem() {
-    const sId = parseInt(document.getElementById('item-select').value);
-    const qty = parseInt(document.getElementById('item-qty').value);
-    const select = document.getElementById('item-select');
-    const name = select.options[select.selectedIndex].text.split(' (')[0];
-    const price = parseFloat(select.options[select.selectedIndex].text.split('LKR ')[1].slice(0, -1));
-
-    invoiceItems.push({ name, price, qty, subtotal: price * qty });
-    updateInvoicePreview();
-}
-
-function updateInvoicePreview() {
-    const body = document.getElementById('invoice-items-body');
-    let total = 0;
-    body.innerHTML = invoiceItems.map((item, i) => {
-        total += item.subtotal;
-        return `<tr class="font-bold border-none text-gray-700"><td>${item.name} x${item.qty}</td><td class="text-right">LKR ${item.subtotal}</td><td><button onclick="invoiceItems.splice(${i}, 1); updateInvoicePreview();" class="text-red-400">×</button></td></tr>`;
-    }).join('');
-    document.getElementById('summary-total').innerText = `LKR ${total.toLocaleString()}`;
-}
-
-async function saveInvoice() {
-    const cId = parseInt(document.getElementById('inv-cust').value);
-    const isPaid = document.getElementById('inv-paid').checked;
-    if(isNaN(cId) || invoiceItems.length === 0) return alert("Items thoranna machan!");
-    const cust = await db.customers.get(cId);
-    await db.invoices.add({ 
-        customerId: cId, customerName: cust.name, items: invoiceItems, 
-        total: invoiceItems.reduce((s,i)=>s+i.subtotal,0), status: isPaid ? 'Paid' : 'Pending', 
-        date: new Date().toISOString() 
-    });
-    alert("Invoice successfully saved! ✅"); renderInvoices();
-}
-
-// --- Expense Components ---
-async function renderExpenses() {
-    setActiveNav('nav-expenses');
-    const list = await db.expenses.toArray();
-    document.getElementById('app-content').innerHTML = `
-        <div class="animate-fade-in space-y-6">
-            <div class="flex justify-end p-4"><button onclick="openAddExpenseModal()" class="btn btn-error text-white font-black shadow-lg">NEW EXPENSE</button></div>
-            <div class="glass-card overflow-hidden bg-white shadow-xl rounded-3xl">
-                <table class="table w-full">
-                    <thead class="bg-gray-50 uppercase text-[10px] font-black border-b"><tr><th>Type</th><th>Details</th><th class="text-right">Amount</th></tr></thead>
-                    <tbody class="font-bold">${list.reverse().map(e => `<tr class="border-b"><td><span class="badge badge-info bg-blue-50 text-blue-600 border-none font-black uppercase text-[9px]">${e.category}</span></td><td>${e.description}</td><td class="text-right text-red-500 font-black">LKR ${e.amount.toLocaleString()}</td></tr>`).join('')}</tbody>
-                </table>
-            </div>
-        </div>
-    `;
-}
-
 function openAddExpenseModal() {
-    openModal('Add Business Expense', `
-        <div class="space-y-4">
-            <input type="text" id="exp-desc" placeholder="Details (e.g. Fuel)" class="input input-bordered w-full font-bold h-12 rounded-xl" />
-            <select id="exp-cat" class="select select-bordered w-full font-bold h-12 rounded-xl">
-                <option>Fuel / Transport</option><option>Shop Rent</option><option>Spare Parts</option><option>Salary</option><option>Other</option>
+    openModal('Add Expense', `
+        <div class="form-control w-full">
+            <label class="label"><span class="label-text">Description</span></label>
+            <input type="text" id="exp-desc" placeholder="e.g. Fuel, Tools" class="input input-bordered w-full" />
+        </div>
+        <div class="flex gap-4">
+             <div class="form-control w-1/2">
+                <label class="label"><span class="label-text">Amount</span></label>
+                <input type="number" id="exp-amt" class="input input-bordered w-full" />
+            </div>
+            <div class="form-control w-1/2">
+                <label class="label"><span class="label-text">Date</span></label>
+                <input type="date" id="exp-date" class="input input-bordered w-full" />
+            </div>
+        </div>
+        <div class="form-control w-full">
+            <label class="label"><span class="label-text">Category</span></label>
+            <select id="exp-cat" class="select select-bordered w-full">
+                <option>Fuel / Transport</option>
+                <option>Shop Rent</option>
+                <option>Electricity/Water</option>
+                <option>Spare Parts</option>
+                <option>Salary</option>
+                <option>Marketing</option>
+                <option>Other</option>
             </select>
-            <input type="number" id="exp-amt" placeholder="Amount (LKR)" class="input input-bordered w-full font-bold h-12 rounded-xl" />
         </div>
     `, 'saveExpense()');
 }
 
 async function saveExpense() {
-    const d=document.getElementById('exp-desc').value, c=document.getElementById('exp-cat').value, a=parseFloat(document.getElementById('exp-amt').value);
-    if(!d || isNaN(a)) return alert("Data missing.");
-    await db.expenses.add({ description: d, category: c, amount: a, date: new Date().toISOString() });
-    closeModal(); renderExpenses();
+    const description = document.getElementById('exp-desc').value;
+    const amount = parseFloat(document.getElementById('exp-amt').value);
+    const date = document.getElementById('exp-date').value;
+    const category = document.getElementById('exp-cat').value;
+
+    if (!description || isNaN(amount)) return alert("Fields missing");
+
+    await db.expenses.add({ description, amount, date, category });
+    closeModal();
+    renderExpenses();
 }
 
-// --- Settings & Protection ---
+// --- Settings Component ---
 function renderSettings() {
     setActiveNav('nav-settings');
-    document.getElementById('app-content').innerHTML = `
-        <div class="max-w-2xl mx-auto pb-20 space-y-8 animate-fade-in">
-            <div class="glass-card p-10 bg-white shadow-2xl rounded-[3rem] border border-gray-100 relative overflow-hidden">
-                <h3 class="font-black text-gray-400 uppercase tracking-[6px] text-[10px] mb-12 border-b pb-4">Business Core Settings</h3>
-                <div class="space-y-6">
-                    <div class="form-control">
-                        <label class="label text-[10px] font-black uppercase text-gray-400 ml-2">Company Name Display</label>
-                        <input type="text" id="set-name" value="${systemSettings.companyName}" class="input input-bordered h-16 rounded-2xl font-black text-xl border-2 focus:border-blue-500 shadow-inner">
-                    </div>
-                </div>
-                
-                <div class="mt-12 bg-blue-600 p-8 rounded-[2.5rem] text-white shadow-2xl shadow-blue-100 border border-white/10 relative">
-                    <div class="absolute -top-6 -right-6 w-24 h-24 bg-blue-500 rounded-full blur-2xl opacity-50"></div>
-                    <h3 class="font-black uppercase tracking-[3px] text-sm mb-4"><i class="fa-solid fa-shield-halved text-yellow-300 mr-2"></i> Permanent Data Safety</h3>
-                    <p class="text-xs opacity-80 leading-relaxed font-bold mb-10 italic">"Machan, oya use karana browser eka (Chrome/Safari) samahara welawata machine eka clean karaddi me data delete karanna puluwan. E nisa me BACKUP krama use karanna mathaka thiyaganna."</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-                        <button onclick="exportData()" class="btn bg-white text-blue-600 border-none hover:bg-gray-100 font-black h-14 rounded-2xl shadow-lg uppercase tracking-widest text-[10px]">Generate Backup</button>
-                        <button onclick="triggerImport()" class="btn bg-blue-700/50 border-2 border-white/20 text-white font-black h-14 rounded-2xl hover:bg-blue-700 uppercase tracking-widest text-[10px]">Restore Factory</button>
-                    </div>
-                </div>
+    const content = document.getElementById('app-content');
 
-                <div class="flex gap-4 mt-12">
-                     <button onclick="saveSettings()" class="btn btn-primary flex-1 h-16 rounded-2xl font-black text-xl text-white shadow-xl shadow-blue-100 uppercase tracking-widest">Update Cloud</button>
-                     <button onclick="handleLogout()" class="btn btn-ghost h-16 px-8 rounded-2xl font-black uppercase text-red-500 border border-red-50">Exit</button>
+    content.innerHTML = `
+        <div class="animate-fade-in max-w-3xl mx-auto">
+            <div class="glass-card p-8">
+                <h2 class="text-3xl font-black text-gray-800 mb-8 flex items-center gap-4">
+                    <i class="fa-solid fa-gear text-blue-600 animate-spin-slow"></i> System Settings
+                </h2>
+                <div class="space-y-12">
+                     <section>
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 border-b pb-2">Business Branding</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="form-control">
+                                <label class="label text-xs font-extrabold uppercase ml-1">Company Name</label>
+                                <input type="text" id="set-name" value="${systemSettings.companyName}" class="input input-bordered font-bold focus:border-blue-500">
+                            </div>
+                            <div class="form-control">
+                                <label class="label text-xs font-extrabold uppercase ml-1">Official Phone</label>
+                                <input type="text" id="set-phone" value="${systemSettings.phone}" class="input input-bordered font-bold">
+                            </div>
+                            <div class="form-control md:col-span-2">
+                                <label class="label text-xs font-extrabold uppercase ml-1">Office Address</label>
+                                <textarea id="set-addr" class="textarea textarea-bordered font-bold h-24">${systemSettings.address}</textarea>
+                            </div>
+                             <div class="form-control">
+                                <label class="label text-xs font-extrabold uppercase ml-1">Company Tagline</label>
+                                <input type="text" id="set-tagline" value="${systemSettings.tagline}" class="input input-bordered font-bold">
+                            </div>
+                             <div class="form-control">
+                                <label class="label text-xs font-extrabold uppercase ml-1">Logo URL (Base64/Link)</label>
+                                <input type="text" id="set-logo" value="${systemSettings.logo}" class="input input-bordered font-bold">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section>
+                        <h3 class="text-xs font-black text-gray-400 uppercase tracking-widest mb-6 border-b pb-2 text-red-500 border-red-100">User & Security</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 bg-red-50/50 p-6 rounded-2xl border border-red-100">
+                            <div class="form-control">
+                                <label class="label text-xs font-extrabold uppercase ml-1 text-red-400">Username</label>
+                                <input type="text" id="set-user" value="${systemSettings.username}" class="input input-bordered font-bold">
+                            </div>
+                            <div class="form-control">
+                                <label class="label text-xs font-extrabold uppercase ml-1 text-red-400">Password</label>
+                                <input type="password" id="set-pass" value="${systemSettings.password}" class="input input-bordered font-bold">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-blue-600 p-8 rounded-3xl text-white shadow-xl shadow-blue-100">
+                        <h3 class="text-sm font-black uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-yellow-300"></i> Lifetime Data Security
+                        </h3>
+                        <p class="text-xs opacity-70 leading-relaxed font-bold mb-6">Machan, me system eka phone eke local storage eke thama save wenne. Phone eka format kaloth hari, tab eka delete kaloth hari data yana nisa aniwa sathiye sarayak me backup eka ganna.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button onclick="exportData()" class="btn border-none bg-yellow-400 hover:bg-yellow-500 text-blue-900 font-black h-14">
+                                <i class="fa-solid fa-download"></i> BACKUP DATA NOW
+                            </button>
+                            <button onclick="triggerImport()" class="btn border-none bg-blue-500 hover:bg-blue-400 text-white font-black h-14">
+                                <i class="fa-solid fa-file-import"></i> RESTORE FROM BACKUP
+                            </button>
+                        </div>
+                    </section>
+
+                    <div class="flex gap-4 pt-10">
+                        <button onclick="saveSettings()" class="btn btn-primary flex-1 h-14 text-white font-black text-xl shadow-lg shadow-blue-100">UDA SAVE KARANNA <i class="fa-solid fa-check ml-2"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -629,87 +1087,142 @@ function renderSettings() {
 }
 
 async function saveSettings() {
-    systemSettings.companyName=document.getElementById('set-name').value;
-    await db.settings.put({id:'config',...systemSettings});
-    alert("System updated successfully! ✅"); renderDashboard();
+    systemSettings.companyName = document.getElementById('set-name').value;
+    systemSettings.phone = document.getElementById('set-phone').value;
+    systemSettings.address = document.getElementById('set-addr').value;
+    systemSettings.tagline = document.getElementById('set-tagline').value;
+    systemSettings.logo = document.getElementById('set-logo').value;
+    systemSettings.username = document.getElementById('set-user').value;
+    systemSettings.password = document.getElementById('set-pass').value;
+
+    await db.settings.put({ id: 'config', ...systemSettings });
+    updateLogoDisplay();
+    updateProfileDisplay();
+    alert("Settings Saved Successfully! ✅");
 }
 
-function handleLogout() { sessionStorage.removeItem('coolmech_auth'); window.location.reload(); }
-
-// --- Support Functions ---
-
-function openModal(title, html, action) {
-    document.getElementById('modal-container').innerHTML = `
-        <div id="main-modal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-[260] flex items-center justify-center p-4 animate-fade-in shadow-2xl">
-            <div class="bg-white rounded-[3rem] w-full max-w-md animate-slide-up shadow-2xl border border-gray-100 overflow-hidden">
-                <div class="p-6 bg-gray-50 flex justify-between items-center font-black uppercase text-[10px] tracking-widest border-b border-gray-100 text-gray-400">
-                    <span>${title}</span><button onclick="closeModal()" class="hover:text-red-500">CLOSE ×</button>
+// --- Modal System ---
+function openModal(title, contentHTML, actionOnConfirm = null) {
+    const container = document.getElementById('modal-container');
+    container.innerHTML = `
+        <div id="main-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-fade-in">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-white/20 animate-slide-up">
+                <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 class="font-black text-gray-800 uppercase tracking-tight">${title}</h3>
+                    <button onclick="closeModal()" class="btn btn-ghost btn-circle btn-sm"><i class="fa-solid fa-xmark"></i></button>
                 </div>
-                <div class="p-10 font-bold text-gray-700">${html}</div>
-                <div class="p-6 bg-gray-50 flex gap-4">
-                    <button onclick="closeModal()" class="btn btn-ghost flex-1 font-black uppercase tracking-widest text-[10px]">Cancel</button>
-                    ${action ? `<button onclick="${action}" class="btn btn-primary flex-1 text-white font-black shadow-lg shadow-blue-100 uppercase tracking-widest text-[10px]">Confirm Now</button>` : ''}
+                <div class="p-8 max-h-[70vh] overflow-y-auto">
+                    ${contentHTML}
+                </div>
+                <div class="p-6 bg-gray-50/80 border-t border-gray-100 flex gap-3">
+                    <button onclick="closeModal()" class="btn btn-ghost flex-1 font-bold">Cancel</button>
+                    ${actionOnConfirm ? `<button onclick="${actionOnConfirm}" class="btn btn-primary flex-1 text-white font-black shadow-lg shadow-blue-100">Confirm Action</button>` : ''}
                 </div>
             </div>
-        </div>`;
+        </div>
+    `;
 }
 
-function closeModal() { document.getElementById('modal-container').innerHTML = ''; }
-function updateDate() { document.getElementById('current-date').innerText = new Date().toLocaleDateString('en-GB', { weekday:'long', year:'numeric', month:'long', day:'numeric' }); }
-function updateLogoDisplay() {} function updateProfileDisplay() {}
+function closeModal() {
+    document.getElementById('modal-container').innerHTML = '';
+}
 
-// --- Advanced Data Logic ---
+// --- Manual File Backup System (Lifetime Reliable) ---
 async function exportData() {
-    const d = { 
-        customers: await db.customers.toArray(), services: await db.services.toArray(), 
-        invoices: await db.invoices.toArray(), expenses: await db.expenses.toArray(), settings: await db.settings.toArray() 
-    };
-    const blob = new Blob([JSON.stringify(d, null, 2)], {type:'application/json'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); 
-    a.download=`CoolMech_SafeCopy_${new Date().toISOString().split('T')[0]}.json`; 
-    a.click();
+    try {
+        const data = {
+            customers: await db.customers.toArray(),
+            services: await db.services.toArray(),
+            invoices: await db.invoices.toArray(),
+            expenses: await db.expenses.toArray(),
+            settings: await db.settings.toArray(),
+            logs: await db.logs.toArray(),
+            version: '2.0',
+            exportedAt: new Date().toLocaleString()
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const fileName = `CMS_Backup_${new Date().toISOString().split('T')[0]}.json`;
+
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        openModal("✅ Backup Successful!", `
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-cloud-arrow-down text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">File eka download una macahn!</h3>
+                <div class="bg-yellow-50 p-4 rounded-xl text-left border border-yellow-100 text-sm">
+                    <p class="font-black text-yellow-800 uppercase mb-2">⚠️ Sathiye sarayak meka karanna:</p>
+                    <p class="text-yellow-700">Me download una file eka danma oyage <b>Google Drive</b> ekata hari, <b>Email</b> ekakata hari upload karala thiyaganna. Ethakota phone eka nathi unath data okkoma safe!</p>
+                </div>
+                <button onclick="closeModal()" class="btn btn-primary w-full text-white font-bold">Harier Machan 👍</button>
+            </div>
+        `);
+
+    } catch (error) {
+        console.error("Export Failed", error);
+        alert("Backup Failed: " + error.message);
+    }
 }
 
 function triggerImport() {
-    const input=document.createElement('input'); input.type='file'; input.accept='.json';
-    input.onchange=ev=>{
-        const r=new FileReader(); r.onload=async()=>{
-            const d=JSON.parse(r.result);
-            if (confirm("⚠️ PARISSAMIN: Restore karannada? Denata thiyena data okkoma delete wei!")) {
-                await db.customers.clear(); await db.services.clear(); await db.invoices.clear(); await db.expenses.clear();
-                await db.customers.bulkAdd(d.customers); await db.services.bulkAdd(d.services); await db.invoices.bulkAdd(d.invoices); await db.expenses.bulkAdd(d.expenses);
-                alert("Restored Successfully! ✅ System reloaded."); window.location.reload();
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) handleImport(file);
+    };
+    input.click();
+}
+
+async function handleImport(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+
+            if (!importedData.customers || !importedData.invoices) {
+                alert("Invalid Backup File! Please check the file.");
+                return;
             }
-        }; r.readAsText(ev.target.files[0]);
-    }; input.click();
+
+            if (confirm("Restore karannada? Dan thiyena data okkoma delete wela backup eke thiyena dewal danna yanne. Sure da?")) {
+                await db.transaction('rw', db.customers, db.services, db.invoices, db.expenses, db.settings, db.logs, async () => {
+                    await db.customers.clear();
+                    await db.services.clear();
+                    await db.invoices.clear();
+                    await db.expenses.clear();
+                    await db.settings.clear();
+                    await db.logs.clear();
+
+                    await db.customers.bulkAdd(importedData.customers);
+                    await db.services.bulkAdd(importedData.services);
+                    await db.invoices.bulkAdd(importedData.invoices);
+                    await db.expenses.bulkAdd(importedData.expenses);
+                    await db.settings.bulkAdd(importedData.settings);
+                    if (importedData.logs) await db.logs.bulkAdd(importedData.logs);
+                });
+
+                alert("System Successfully Restored! ✅");
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Restore Failed: " + err.message);
+        }
+    };
+    reader.readAsText(file);
 }
 
-async function printInvoice(id) {
-    const inv = await db.invoices.get(id);
-    const win = window.open('', '_blank');
-    win.document.write(`
-        <html><head><title>BILL #${inv.id}</title><script src="https://cdn.tailwindcss.com"></script></head>
-        <body class="p-10 bg-gray-50"><div class="max-w-2xl mx-auto bg-white border-2 border-blue-600 p-10 rounded-[3rem] shadow-2xl relative overflow-hidden">
-            <h1 class="text-4xl font-black text-blue-600 mb-2">${systemSettings.companyName}</h1>
-            <p class="text-gray-400 font-bold mb-10 italic uppercase text-[10px] tracking-widest">${systemSettings.tagline}</p>
-            <div class="flex justify-between border-y-2 border-gray-100 py-6 mb-10">
-                <div><p class="text-[9px] uppercase font-black text-gray-300 mb-1">Bill To</p><p class="text-xl font-black text-gray-800 uppercase italic">${inv.customerName}</p></div>
-                <div class="text-right"><p class="text-[9px] uppercase font-black text-gray-300 mb-1">Doc No</p><p class="text-xl font-black text-blue-600 italic">#INV-${inv.id}</p></div>
-            </div>
-            <table class="w-full mb-10 font-bold text-sm text-gray-700">
-                <thead class="text-[9px] uppercase text-gray-300 border-b"><tr><th class="text-left py-2">Service Description</th><th class="text-right">Amount</th></tr></thead>
-                ${inv.items.map(i=>`<tr class="border-b border-gray-50"><td class="py-4">${i.name} x${i.qty}</td><td class="text-right py-4 font-black">LKR ${i.subtotal}</td></tr>`).join('')}
-            </table>
-            <div class="text-right border-t-4 border-blue-600 pt-6"><p class="text-[10px] uppercase font-black text-gray-300 italic mb-1">Net Payable Total</p><p class="text-5xl font-black text-blue-600 tracking-tighter">LKR ${inv.total}</p></div>
-            <div class="mt-20 flex justify-between items-end text-[9px] font-black uppercase text-gray-300 border-t pt-2">
-                <p>Hotline: ${systemSettings.phone}</p><p class="border-t-2 border-gray-300 pt-2 px-10">Manager Signature</p>
-            </div>
-            <button onclick="window.print()" class="bg-blue-600 text-white px-10 py-5 rounded-3xl font-black uppercase tracking-widest mt-12 no-print w-full shadow-2xl shadow-blue-200">Print Official Bill</button>
-        </div><style>@media print{.no-print{display:none;}}</style></body></html>`);
-    win.document.close();
-}
-
-// 💡 STORAGE PROTECTION Logic
 async function checkStorageHealth() {
     const healthBar = document.getElementById('storage-health-bar');
     if (!healthBar) return;
@@ -720,29 +1233,45 @@ async function checkStorageHealth() {
     }
 
     const isLocalFile = window.location.protocol === 'file:';
-    
-    // Update Dashboard UI with cool health indicator
+
+    // Update Dashboard UI
     healthBar.innerHTML = `
-        <div class="glass-card p-6 border-l-8 ${isPersisted ? 'border-green-500 bg-green-50/30' : 'border-red-500 bg-red-50/30'} flex items-center justify-between shadow-xl">
+        <div class="glass-card p-6 border-l-8 ${isPersisted ? 'border-green-500 bg-green-50/30' : 'border-red-500 bg-red-50/30'} flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <div class="w-12 h-12 ${isPersisted ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'} rounded-2xl flex items-center justify-center text-2xl shadow-sm">
                     <i class="fa-solid ${isPersisted ? 'fa-shield-check' : 'fa-triangle-exclamation'}"></i>
                 </div>
                 <div>
-                    <h3 class="font-black text-gray-800 uppercase tracking-tight text-sm">Storage Status: ${isPersisted ? 'Safe Mode' : 'Risk Detected'}</h3>
-                    <p class="text-[10px] ${isPersisted ? 'text-green-600' : 'text-red-500'} font-bold uppercase tracking-widest">
-                        ${isPersisted ? 'Data persistence is active. Your data is protected.' : 'Data is stored temporarily! Export backups frequently.'}
+                    <h3 class="font-black text-gray-800 uppercase tracking-tight">Storage Status: ${isPersisted ? 'Protected' : 'Risk Detected'}</h3>
+                    <p class="text-xs ${isPersisted ? 'text-green-600' : 'text-red-600'} font-bold">
+                        ${isPersisted ? 'Data persistence is active. Your data is safe.' : 'Data is stored temporarily! Please install the app or take frequent backups.'}
                     </p>
                 </div>
             </div>
-            ${!isPersisted ? `<button onclick="renderSettings()" class="btn btn-error btn-xs font-black text-white px-4 rounded-lg">FIX SECURITY</button>` : ''}
+            ${!isPersisted ? `<button onclick="renderSettings()" class="btn btn-error btn-sm font-black text-white">FIX NOW</button>` : ''}
         </div>
     `;
 
-    // Alert if critical
+    // Show Critical Modal if on file system and not persisted
     if (isLocalFile && !isPersisted) {
-        openModal("⚠️ Security Notice", "Machan, browser eka data delete karanna ida thiyenawa local file nisa. Settings walin <b>BACKUP</b> ganna mathaka thiyaganna. GitHub eke use karanna puluwan nam thawat hondai.", "");
+        openModal("⚠️ Lifetime Data Security", `
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa-solid fa-cloud-slash text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800">Machan, Data Save wenna meka karanna!</h3>
+                <p class="text-sm text-gray-600 leading-relaxed">
+                    Oya meka use karanne <b>Local File</b> එකක් විදිහට. Browser එක ඕන වෙලාවක මේ data delete කරන්න පුළුවන්. 
+                </p>
+                <div class="bg-blue-50 p-4 rounded-xl text-left border border-blue-100">
+                    <p class="text-[10px] font-black text-blue-800 uppercase mb-2">Wisadama:</p>
+                    <ul class="text-[10px] text-blue-700 space-y-2 list-disc ml-4 font-bold">
+                        <li>System eka <b>GitHub</b> ekata upload karala use karanna.</li>
+                        <li>Naththam <b>Settings</b> walata gihin sathiye sarayak <b>Backup</b> ekak ganna.</li>
+                    </ul>
+                </div>
+                <button onclick="closeModal()" class="btn btn-primary w-full text-white font-black">HARI MAMA BALANNAM</button>
+            </div>
+        `);
     }
-} 
-    checkStorageHealth();
 }
