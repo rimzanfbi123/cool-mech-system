@@ -45,13 +45,19 @@ function closeSidebarOnMobile() {
     }
 }
 
+// --- Google Drive Global (Removed for simplicity) ---
+// Manual backup strategy is more reliable for lifetime use.
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
     // Load Settings
     try {
         const storedSettings = await db.settings.get('config');
         if (storedSettings) {
-            systemSettings = { ...systemSettings, ...storedSettings }; // Merge defaults
+            systemSettings = {
+                ...systemSettings,
+                ...storedSettings
+            };
         } else {
             // Initialize default settings
             await db.settings.put({ id: 'config', ...systemSettings });
@@ -79,14 +85,59 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
-function initApp() {
+async function initApp() {
     document.getElementById('login-screen')?.remove();
     document.getElementById('main-app').classList.remove('hidden');
+
+    // Ensure DB is open
+    try {
+        await db.open();
+    } catch (err) {
+        console.error("DB Open Failed", err);
+    }
+
     updateLogoDisplay();
     updateProfileDisplay();
     updateDate();
     renderDashboard();
+
+    // Check storage health after a delay
+    setTimeout(checkStorageHealth, 2000);
 }
+
+async function checkStorageHealth() {
+    // Detect if running from local file system
+    const isLocalFile = window.location.protocol === 'file:';
+    // Bypass alert if we are on GitHub or a real web host
+    const isWebhost = window.location.hostname.includes('github.io') || window.location.hostname !== "";
+
+    if (isLocalFile && !isWebhost) {
+        const isPersisted = navigator.storage && navigator.storage.persist ? await navigator.storage.persisted() : false;
+
+        if (!isPersisted) {
+            openModal("⚠️ Storage Alert (Data Security)", `
+                <div class="text-center space-y-4">
+                    <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <i class="fa-solid fa-triangle-exclamation text-3xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">Machan, ekak kiyanna ona!</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        Oya dan me system eka use karanne <b>Local File</b> එකක් විදිහට. Browser එක සමහර වෙලාවට මේවගේ data delete කරනවා. 
+                    </p>
+                    <div class="bg-blue-50 p-4 rounded-xl text-left border border-blue-100">
+                        <p class="text-xs font-bold text-blue-800 uppercase mb-2">Meka wisadanna krama 2i:</p>
+                        <ul class="text-xs text-blue-700 space-y-2 list-disc ml-4">
+                            <li>System eka <b>GitHub</b> ekata upload karala use karanna (Hama dama data thiyenawa).</li>
+                            <li><b>Settings</b> walata gihin sathiye sarayak <b>Backup</b> ekak ganna.</li>
+                        </ul>
+                    </div>
+                    <button onclick="closeModal()" class="btn btn-primary w-full text-white">Harier mama balannam</button>
+                </div>
+            `);
+        }
+    }
+}
+
 
 function renderLoginScreen() {
     document.getElementById('main-app').classList.add('hidden');
@@ -243,6 +294,9 @@ async function renderDashboard() {
                     <div class="stat-desc text-red-500 font-bold">${lowStock.length > 0 ? 'Low Stock Items!' : 'All good'}</div>
                 </div>
             </div>
+
+            <!-- Health Status Bar -->
+            <div id="storage-health-bar"></div>
 
             <!-- Recent Activity Section -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1020,82 +1074,98 @@ function renderSettings() {
     content.innerHTML = `
         <div class="animate-fade-in max-w-3xl mx-auto">
             <div class="glass-card p-8">
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">System Settings</h2>
+                <div class="flex items-center gap-4 mb-6 border-b pb-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <i class="fa-solid fa-gear text-2xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-black text-gray-800">System Settings</h2>
+                </div>
                 
-                <div class="grid grid-cols-1 gap-6">
-                    <!-- Company Info -->
-                    <div class="form-control">
-                        <label class="label font-bold text-gray-600">Company Name</label>
-                        <input type="text" id="set-name" value="${systemSettings.companyName}" class="input input-bordered">
-                    </div>
+                <div class="grid grid-cols-1 gap-8">
+                    <!-- Company Info Section -->
+                    <div class="space-y-4">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Business Branding</h3>
+                        
+                        <div class="form-control">
+                            <label class="label font-bold text-gray-700">Company Name</label>
+                            <input type="text" id="set-name" value="${systemSettings.companyName}" class="input input-bordered focus:ring-2 focus:ring-blue-500 transition-all font-bold">
+                        </div>
 
-                     <div class="form-control">
-                        <label class="label font-bold text-gray-600">Company Tagline</label>
-                        <input type="text" id="set-tagline" value="${systemSettings.tagline}" class="input input-bordered" placeholder="e.g. Best HVAC in town">
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div class="form-control">
-                            <label class="label font-bold text-gray-600">Phone</label>
-                            <input type="text" id="set-phone" value="${systemSettings.phone}" class="input input-bordered">
+                            <label class="label font-bold text-gray-700">Company Tagline</label>
+                            <input type="text" id="set-tagline" value="${systemSettings.tagline}" class="input input-bordered" placeholder="e.g. Reliable HVAC Services">
                         </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             <div class="form-control">
+                                <label class="label font-bold text-gray-700">Phone</label>
+                                <input type="text" id="set-phone" value="${systemSettings.phone}" class="input input-bordered">
+                            </div>
+                            <div class="form-control">
+                                 <label class="label font-bold text-gray-700">Logo URL</label>
+                                 <input type="text" id="set-logo" value="${systemSettings.logo}" class="input input-bordered" placeholder="assets/img/logo.png">
+                            </div>
+                        </div>
+
                         <div class="form-control">
-                             <label class="label font-bold text-gray-600">Logo Image URL</label>
-                             <input type="text" id="set-logo" value="${systemSettings.logo}" class="input input-bordered" placeholder="http://... or assets/img/logo.png">
-                             <label class="label">
-                                <span class="label-text-alt text-gray-400">Put your logo in assets/img/logo.png and type that path here.</span>
-                             </label>
+                            <label class="label font-bold text-gray-700">Business Address</label>
+                            <textarea id="set-address" class="textarea textarea-bordered h-24 font-mono text-sm">${systemSettings.address}</textarea>
                         </div>
                     </div>
 
-                    <div class="form-control">
-                        <label class="label font-bold text-gray-600">Address</label>
-                        <textarea id="set-address" class="textarea textarea-bordered h-24">${systemSettings.address}</textarea>
-                    </div>
-
-                    <!-- Invoice Config -->
-                    <div class="form-control">
-                        <label class="label font-bold text-gray-600">Warranty / Invoice Footer Text</label>
-                        <textarea id="set-warranty" class="textarea textarea-bordered h-24">${systemSettings.warrantyText}</textarea>
-                    </div>
-
-                    <div class="divider">User & Security</div>
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="form-control">
-                            <label class="label font-bold text-gray-600">Login Username</label>
-                            <input type="text" id="set-user" value="${systemSettings.username}" class="input input-bordered">
+                    <!-- Security & Access Section -->
+                    <div class="space-y-4 pt-6 border-t border-gray-100">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest">User & Security</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="form-control">
+                                <label class="label font-bold text-gray-700">Login Username</label>
+                                <input type="text" id="set-user" value="${systemSettings.username}" class="input input-bordered">
+                            </div>
+                            <div class="form-control">
+                                 <label class="label font-bold text-gray-700">Login Password</label>
+                                 <input type="password" id="set-pass" value="${systemSettings.password}" class="input input-bordered">
+                            </div>
                         </div>
-                        <div class="form-control">
-                             <label class="label font-bold text-gray-600">Login Password</label>
-                             <input type="password" id="set-pass" value="${systemSettings.password}" class="input input-bordered">
-                        </div>
+
                          <div class="form-control">
-                             <label class="label font-bold text-gray-600">Profile Photo URL</label>
+                             <label class="label font-bold text-gray-700">Profile Photo URL</label>
                              <input type="text" id="set-profile" value="${systemSettings.profilePhoto}" class="input input-bordered" placeholder="assets/img/avatars/me.png">
-                             <label class="label"><span class="label-text-alt">Put image in 'assets/img/avatars/'</span></label>
-                        </div>
-                         <div class="form-control">
-                            <label class="label font-bold text-gray-600">Theme</label>
-                             <label class="swap swap-rotate btn btn-ghost btn-circle justify-start w-fit px-4 gap-4">
-                                <input type="checkbox" onchange="toggleTheme()" ${systemSettings.theme === 'dark' ? 'checked' : ''} />
-                                <div class="swap-on flex items-center gap-2"><i class="fa-solid fa-moon"></i> Dark Mode</div>
-                                <div class="swap-off flex items-center gap-2"><i class="fa-solid fa-sun"></i> Light Mode</div>
-                            </label>
                         </div>
                     </div>
 
-                    <button onclick="saveSettings()" class="btn btn-primary text-white">Save All Changes</button>
-                    
-                    <div class="divider">Backup & Restore</div>
-                    <div class="flex gap-4">
-                        <button onclick="exportData()" class="btn btn-outline btn-success gap-2">
-                             <i class="fa-solid fa-download"></i> Backup Data
-                        </button>
-                        <button onclick="triggerImport()" class="btn btn-outline btn-warning gap-2">
-                             <i class="fa-solid fa-upload"></i> Restore Data
-                        </button>
-                        <input type="file" id="import-file" style="display:none" onchange="importData(event)" accept=".json">
+                    <!-- Lifetime Backup Section (Crucial) -->
+                    <div class="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg">
+                                <i class="fa-solid fa-shield-heart text-lg"></i>
+                            </div>
+                            <h3 class="font-black text-blue-800">Lifetime Data Security</h3>
+                        </div>
+                        
+                        <p class="text-sm text-blue-700/80 leading-relaxed">
+                            Machan, me system eka phone eke local storage eke thama save wenne. Phone eka format kaloth hari, tab eka delete kaloth hari data yana nisa <b>aniwa sathiye sarayak</b> me backup eka ganna.
+                        </p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                             <button onclick="exportData()" class="btn btn-primary text-white gap-2 shadow-md">
+                                 <i class="fa-solid fa-cloud-arrow-down"></i> Backup Now (Download File)
+                            </button>
+                            <button onclick="triggerImport()" class="btn btn-outline btn-primary gap-2">
+                                 <i class="fa-solid fa-clock-rotate-left"></i> Restore From Backup
+                            </button>
+                            <input type="file" id="import-file" style="display:none" onchange="importData(event)" accept=".json">
+                        </div>
+                        
+                        <div class="flex items-center gap-2 text-[10px] text-blue-400 font-bold uppercase tracking-tighter mt-2">
+                            <i class="fa-solid fa-circle-exclamation"></i>
+                            After download, please send the backup file to your own Email or WhatsApp.
+                        </div>
                     </div>
+
+                    <button onclick="saveSettings()" class="btn btn-info btn-lg text-white font-black shadow-xl shadow-blue-200 mt-4">
+                        <i class="fa-solid fa-save mr-2"></i> Save All Changes
+                    </button>
                 </div>
             </div>
         </div>
@@ -1104,13 +1174,12 @@ function renderSettings() {
 
 async function saveSettings() {
     systemSettings = {
-        ...systemSettings, // Keep existing keys like theme if not explicity set here, but we set them below
+        ...systemSettings,
         companyName: document.getElementById('set-name').value,
         tagline: document.getElementById('set-tagline').value,
         phone: document.getElementById('set-phone').value,
         logo: document.getElementById('set-logo').value,
         address: document.getElementById('set-address').value,
-        warrantyText: document.getElementById('set-warranty').value,
         username: document.getElementById('set-user').value || 'admin',
         password: document.getElementById('set-pass').value || 'password123',
         profilePhoto: document.getElementById('set-profile').value
@@ -1119,7 +1188,8 @@ async function saveSettings() {
     await db.settings.put(systemSettings);
     updateLogoDisplay();
     updateProfileDisplay();
-    alert("Settings Saved!");
+    alert("Settings Saved Successfully! ✅");
+    renderDashboard();
 }
 
 // --- Modals & Popups ---
@@ -1363,4 +1433,104 @@ async function deleteExpense(id) {
         await db.expenses.delete(id);
         renderExpenses();
     }
+}
+
+// --- Manual File Backup System (Lifetime Reliable) ---
+async function exportData() {
+    try {
+        const data = {
+            customers: await db.customers.toArray(),
+            services: await db.services.toArray(),
+            invoices: await db.invoices.toArray(),
+            expenses: await db.expenses.toArray(),
+            settings: await db.settings.toArray(),
+            logs: await db.logs.toArray(),
+            version: '2.0',
+            exportedAt: new Date().toLocaleString()
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const dateStr = new Date().toISOString().split('T')[0];
+
+        a.href = url;
+        a.download = `CMS_Backup_${dateStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Friendly success notification
+        openModal("Backup Successful! ✅", `
+            <div class="text-center space-y-4">
+                <div class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2 animate-bounce">
+                    <i class="fa-solid fa-check text-3xl"></i>
+                </div>
+                <h3 class="text-xl font-black text-gray-800">File eka download una macahn!</h3>
+                <div class="p-4 bg-orange-50 border border-orange-100 rounded-xl text-left">
+                    <p class="text-sm text-orange-800 leading-relaxed uppercase font-black mb-1">⚠️ Sathiye sarayak meka karanna:</p>
+                    <p class="text-xs text-orange-700 leading-relaxed">
+                        Me download una file eka danma oyage <b>Google Drive</b> ekata hari, <b>Email</b> ekakata hari upload karala thiyaganna. Ethakota phone eka nathi unath data okkoma safe!
+                    </p>
+                </div>
+                <button onclick="closeModal()" class="btn btn-primary w-full text-white font-bold">Harier Machan 👍</button>
+            </div>
+        `);
+
+    } catch (error) {
+        console.error("Export Failed", error);
+        alert("Backup Failed: " + error.message);
+    }
+}
+
+function triggerImport() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        importData(file);
+    };
+    input.click();
+}
+
+async function importData(file) {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const importedData = JSON.parse(e.target.result);
+
+            if (!importedData.customers || !importedData.invoices) {
+                alert("Invalid Backup File! Please check the file.");
+                return;
+            }
+
+            if (confirm("Restore karannada? Dan thiyena data okkoma delete wela backup eke thiyena dewal danna yanne. Sure da?")) {
+                await db.transaction('rw', db.customers, db.services, db.invoices, db.expenses, db.settings, db.logs, async () => {
+                    await db.customers.clear();
+                    await db.services.clear();
+                    await db.invoices.clear();
+                    await db.expenses.clear();
+                    await db.settings.clear();
+                    await db.logs.clear();
+
+                    await db.customers.bulkAdd(importedData.customers);
+                    await db.services.bulkAdd(importedData.services);
+                    await db.invoices.bulkAdd(importedData.invoices);
+                    await db.expenses.bulkAdd(importedData.expenses);
+                    await db.settings.bulkAdd(importedData.settings);
+                    if (importedData.logs) await db.logs.bulkAdd(importedData.logs);
+                });
+
+                alert("System Successfully Restored! ✅");
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Restore Failed: " + err.message);
+        }
+    };
+    reader.readAsText(file);
 }
